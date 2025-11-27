@@ -99,6 +99,7 @@ function ∇nuclear!(out, BS::BasisSet, iA)
     # Shell indexes for basis in the atom A (C notation: Starts from 0)
     Ashells = Int[]
     notAshells = Int[]
+    Allshells = Int[]
     for i in 1:BS.nshells
         b = BS.basis[i]
         if b.atom == A
@@ -106,25 +107,26 @@ function ∇nuclear!(out, BS::BasisSet, iA)
         else
             push!(notAshells, i)
         end
+        push!(Allshells, i)
     end
     
     Nvals = num_basis.(BS.basis)
     ao_offset = [sum(Nvals[1:(i-1)]) for i = 1:BS.nshells]
     Nmax = maximum(Nvals)
-    # i ∉ A & j ∉ A
+    # \partial V_{ij,A} / \partial I_x
     allocate(body) = body(zeros(Cdouble, 3*Nmax^2))
-    workerpool(allocate, notAshells; chunksize = 1) do i, buf
+    workerpool(allocate, Allshells; chunksize = 1) do i, buf
         @inbounds begin
             Ni = Nvals[i]
             ioff = ao_offset[i]
             I = (ioff+1):(ioff+Ni)
-            for j in notAshells
+            for j in AllAshells
                 Nj = Nvals[j]
                 Nij = Ni*Nj
                 joff = ao_offset[j]
                 J = (joff+1):(joff+Nj)
 
-                # + ⟨i'|Va|j⟩ + ⟨i|Va|j'⟩   (Note that Va is the potential of the nuclei A alone!!)
+                # + ⟨i'|Va|j⟩   (Note that Va is the potential of the nuclei A alone!!)
                 cint1e_ipnuc_sph!(buf, Cint.([i-1,j-1]), lc_atoms_A, BS.lib.natm, BS.lib.bas, BS.lib.nbas, BS.lib.env)
 
                 # Get strides for each cartesian
@@ -137,55 +139,25 @@ function ∇nuclear!(out, BS::BasisSet, iA)
         end # inbounds
     end
 
-    # i ∈ A & j ∈ A
+    # i ∈ A
     workerpool(allocate, Ashells; chunksize = 1) do i, buf
         @inbounds begin
             Ni = Nvals[i]
             ioff = ao_offset[i]
             I = (ioff+1):(ioff+Ni)
-            for j in Ashells
+            for j in Allshells
                 Nj = Nvals[j]
                 Nij = Ni*Nj
                 joff = ao_offset[j]
                 J = (joff+1):(joff+Nj)
 
-                # - ⟨i'|∑Vc|j⟩ - ⟨i|∑Vc|j'⟩ c != a
-                cint1e_ipnuc_sph!(buf, Cint.([i-1,j-1]), lc_atoms_woA, BS.lib.natm, BS.lib.bas, BS.lib.nbas, BS.lib.env)
+                # - ⟨i'|∑Vc|j⟩
+                cint1e_ipnuc_sph!(buf, Cint.([i-1,j-1]), BS.lib.atm, BS.lib.natm, BS.lib.bas, BS.lib.nbas, BS.lib.env)
 
                 for k in 1:3
                     r = (1+Nij*(k-1)):(k*Nij)
                     ∇k = reshape(buf[r], Int(Ni), Int(Nj))
-                    out[I,J,k] .-= ∇k  # ⟨i'|∑Vc|j ⟩ c != a
-                end
-            end
-        end #inbounds
-    end
-
-    # i ∈ A & j ∉ A
-    workerpool(allocate, Ashells; chunksize = 1) do i, buf
-        @inbounds begin
-            Ni = Nvals[i]
-            ioff = ao_offset[i]
-            I = (ioff+1):(ioff+Ni)
-            for j in notAshells
-                Nj = Nvals[j]
-                Nij = Ni*Nj
-                joff = ao_offset[j]
-                J = (joff+1):(joff+Nj)
-
-                # - ⟨i'|∑Vc|j⟩ + ⟨i|Va|j'⟩ c != a
-                cint1e_ipnuc_sph!(buf, Cint.([i-1,j-1]), lc_atoms_woA, BS.lib.natm, BS.lib.bas, BS.lib.nbas, BS.lib.env)
-                for k in 1:3
-                    r = (1+Nij*(k-1)):(k*Nij)
-                    ∇k = buf[r]
-                    out[I,J,k] .-= reshape(∇k, Int(Ni), Int(Nj))
-                end
-
-                cint1e_ipnuc_sph!(buf, Cint.([j-1,i-1]), lc_atoms_A, BS.lib.natm, BS.lib.bas, BS.lib.nbas, BS.lib.env)
-                for k in 1:3
-                    r = (1+Nij*(k-1)):(k*Nij)
-                    ∇k = buf[r]
-                    out[I,J,k] .+= transpose(reshape(∇k, Int(Nj), Int(Ni)))
+                    out[I,J,k] .+= ∇k  # ⟨i'|∑Vc|j ⟩
                 end
             end
         end #inbounds
