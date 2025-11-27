@@ -120,7 +120,7 @@ function ∇nuclear!(out, BS::BasisSet, iA)
             Ni = Nvals[i]
             ioff = ao_offset[i]
             I = (ioff+1):(ioff+Ni)
-            for j in AllAshells
+            for j in Allshells
                 Nj = Nvals[j]
                 Nij = Ni*Nj
                 joff = ao_offset[j]
