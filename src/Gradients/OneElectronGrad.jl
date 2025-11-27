@@ -157,7 +157,7 @@ function ∇nuclear!(out, BS::BasisSet, iA)
                 for k in 1:3
                     r = (1+Nij*(k-1)):(k*Nij)
                     ∇k = reshape(buf[r], Int(Ni), Int(Nj))
-                    out[I,J,k] .+= ∇k  # ⟨i'|∑Vc|j ⟩
+                    out[I,J,k] .-= ∇k  # ⟨i'|∑Vc|j ⟩
                 end
             end
         end #inbounds
