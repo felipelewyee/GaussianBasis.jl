@@ -3,7 +3,7 @@ function ERI_2e2c!(out, BS::BasisSet, i, j)
 end
 
 function ERI_2e2c!(out, BS::BasisSet{LCint}, i, j)
-    cint2c2e_sph!(out, [i,j], BS.lib)
+    cint2c2e_sph!(out, [i, j], BS.lib)
 end
 
 function ERI_2e2c(BS::BasisSet)

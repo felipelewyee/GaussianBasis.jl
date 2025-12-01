@@ -77,7 +77,7 @@ H: 1s
 H: 1s 1p
 ```
 """
-struct BasisSet{L<:IntLib, A<:Atom, B<:BasisFunction} 
+struct BasisSet{L<:IntLib,A<:Atom,B<:BasisFunction}
     name::String
     atoms::Vector{A}
     basis::Vector{B}
@@ -89,23 +89,28 @@ struct BasisSet{L<:IntLib, A<:Atom, B<:BasisFunction}
     lib::L
 end
 
-function BasisSet(name::String, str_atoms::String; spherical=true, lib=:libcint)
+function BasisSet(name::String, str_atoms::String; spherical = true, lib = :libcint)
     atoms = Molecules.parse_string(str_atoms)
-    BasisSet(name, atoms, spherical=spherical, lib=lib)
+    BasisSet(name, atoms, spherical = spherical, lib = lib)
 end
 
-function BasisSet(name::String, atoms::Vector{<:Atom}; spherical=true, lib=:libcint)
+function BasisSet(name::String, atoms::Vector{<:Atom}; spherical = true, lib = :libcint)
 
     basis = spherical ? SphericalShell[] : CartesianShell[]
 
     for i in eachindex(atoms)
-        bfs = read_basisset(name, atoms[i]; spherical=spherical)
+        bfs = read_basisset(name, atoms[i]; spherical = spherical)
         push!(basis, bfs...)
     end
-    BasisSet(name, atoms, basis, lib=lib)
+    BasisSet(name, atoms, basis, lib = lib)
 end
 
-function BasisSet(name::String, atoms::Vector{<:Atom}, basis::Vector{<:BasisFunction}; lib=:libcint)
+function BasisSet(
+    name::String,
+    atoms::Vector{<:Atom},
+    basis::Vector{<:BasisFunction};
+    lib = :libcint,
+)
 
     natm = length(atoms)
 
@@ -115,11 +120,11 @@ function BasisSet(name::String, atoms::Vector{<:Atom}, basis::Vector{<:BasisFunc
     # Number of basis per atom
     bpa = zeros(Int, natm)
     spa = zeros(Int, natm)
-    for a in 1:natm
+    for a = 1:natm
         for b in basis
             if atoms[a] == b.atom
-                spa[a] += 1 
-                bpa[a] += num_basis(b) 
+                spa[a] += 1
+                bpa[a] += num_basis(b)
             end
         end
     end
@@ -131,18 +136,28 @@ function BasisSet(name::String, atoms::Vector{<:Atom}, basis::Vector{<:BasisFunc
 
     elseif lib == :libcint
 
-        return BasisSet(name, atoms, basis, bpa, spa, natm, nbas, nshells, LCint(atoms, basis))
+        return BasisSet(
+            name,
+            atoms,
+            basis,
+            bpa,
+            spa,
+            natm,
+            nbas,
+            nshells,
+            LCint(atoms, basis),
+        )
     else
         throw(ArgumentError("invalid integral backend option: $(lib)"))
     end
 end
 
 function normalize_spherical!(coef, exp, n)
-    for i = eachindex(coef)
+    for i in eachindex(coef)
         a = exp[i]
         # normalization factor of function rⁿ exp(-ar²)
         s = 2^(2n+3) * factorial(n+1) * (2a)^(n+1.5) / (factorial(2n+2) * √π)
-        coef[i] *= √s 
+        coef[i] *= √s
     end
 end
 
@@ -150,12 +165,14 @@ function normalize_cartesian!(coef, exp, l)
     df = (π^1.5) * (l == 0 ? 1 : doublefactorial(2 * l - 1))
 
     # Normalize primitives
-    coef .*= [ sqrt.((2 * ei) ^ (l + 1.5) / df) for ei in exp ]
+    coef .*= [sqrt.((2 * ei) ^ (l + 1.5) / df) for ei in exp]
 
     # Normalize contractions
-    normsq = (df / 2^l) * sum([ ci * cj / (ei + ej) ^ (l + 1.5) 
-                                           for (ci,ei) in zip(coef, exp)
-                                           for (cj,ej) in zip(coef, exp)])
+    normsq =
+        (df / 2^l) * sum([
+            ci * cj / (ei + ej) ^ (l + 1.5) for (ci, ei) in zip(coef, exp) for
+            (cj, ej) in zip(coef, exp)
+        ])
     coef .*= 1 / sqrt(normsq)
 end
 

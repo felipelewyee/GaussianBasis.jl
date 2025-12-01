@@ -30,28 +30,30 @@ function sparseERI_2e4c(BS::BasisSet, cutoff = 1e-12)
         Li2 = Nvals[i+1]^2
         for j = i:lim
             Lj2 = Nvals[j+1]^2
-            idx = index2(i,j) + 1
-            ij_vals[idx] = (i+1,j+1)
-            ERI_2e4c!(tmp, BS, i+1, i+1, j+1 ,j+1)
+            idx = index2(i, j) + 1
+            ij_vals[idx] = (i+1, j+1)
+            ERI_2e4c!(tmp, BS, i+1, i+1, j+1, j+1)
             σvals[idx] = √maximum(tmp)
         end
     end
 
-    ijkl_vals = Iterators.flatten((((ij_vals[ij]..., ij_vals[kl]...) for ij in 1:kl if σvals[ij] * σvals[kl] > cutoff) for kl = 1:num_ij))
+    ijkl_vals = Iterators.flatten((
+        ((ij_vals[ij]..., ij_vals[kl]...) for ij = 1:kl if σvals[ij] * σvals[kl] > cutoff) for kl = 1:num_ij
+    ))
 
     allocate(body) = body(zeros(Cdouble, Nmax^4))
     # i,j,k,l => Shell indexes starting at zero
     # I, J, K, L => AO indexes starting at one
-    workerpool(allocate, ijkl_vals; chunksize=10) do (i,j,k,l), buf
+    workerpool(allocate, ijkl_vals; chunksize = 10) do (i, j, k, l), buf
         @inbounds begin
-            Li, Lj, Lk, Ll = map(n->Nvals[n], (i,j,k,l))
+            Li, Lj, Lk, Ll = map(n->Nvals[n], (i, j, k, l))
             Lij = Li*Lj
             Lijk = Lij*Lk
 
-            ioff, joff, koff, loff = map(n->ao_offset[n], (i,j,k,l))
+            ioff, joff, koff, loff = map(n->ao_offset[n], (i, j, k, l))
 
             # Compute ERI
-            ERI_2e4c!(buf, BS, i, j, k ,l)
+            ERI_2e4c!(buf, BS, i, j, k, l)
 
             ### This block aims to retrieve unique elements within buf and map them to AO indexes
             # is, js, ks, ls are indexes within the shell e.g. for a p shell is = (1, 2, 3)
@@ -78,8 +80,8 @@ function sparseERI_2e4c(BS::BasisSet, cutoff = 1e-12)
 
                             #KL < IJ ? continue : nothing # This restriction does not work... idk why
 
-                            idx = index2(IJ,KL) + 1
-                            out[idx] = buf[is + bjkl]
+                            idx = index2(IJ, KL) + 1
+                            out[idx] = buf[is+bjkl]
                             indexes[idx] = (I, J, K, L)
                         end
                     end
@@ -92,14 +94,19 @@ function sparseERI_2e4c(BS::BasisSet, cutoff = 1e-12)
 end
 
 function ERI_2e4c(BS::BasisSet, i, j, k, l)
-    out = zeros(eltype(BS.atoms[1].xyz), num_basis(BS.basis[i]), num_basis(BS.basis[j]),
-                num_basis(BS.basis[k]), num_basis(BS.basis[l]))
+    out = zeros(
+        eltype(BS.atoms[1].xyz),
+        num_basis(BS.basis[i]),
+        num_basis(BS.basis[j]),
+        num_basis(BS.basis[k]),
+        num_basis(BS.basis[l]),
+    )
     ERI_2e4c!(out, BS, i, j, k, l)
     return out
 end
 
 function ERI_2e4c!(out, BS::BasisSet{LCint}, i, j, k, l)
-    cint2e_sph!(out, @SVector([i,j,k,l]), BS.lib)
+    cint2e_sph!(out, @SVector([i, j, k, l]), BS.lib)
 end
 
 function ERI_2e4c!(out, BS::BasisSet, i, j, k, l)
@@ -121,7 +128,7 @@ function ERI_2e4c!(out, BS::BasisSet)
     ranges = UnitRange{Int64}[]
     iaccum = 1
     for i = 1:BS.nshells
-        push!(ranges, iaccum:(iaccum+ Nvals[i] -1))
+        push!(ranges, iaccum:(iaccum+Nvals[i]-1))
         iaccum += Nvals[i]
     end
 
@@ -133,10 +140,10 @@ function ERI_2e4c!(out, BS::BasisSet)
         for j = i:N
             for k = ZERO:N
                 for l = k:N
-                    if index2(i,j) < index2(k,l)
+                    if index2(i, j) < index2(k, l)
                         continue
                     end
-                    push!(unique_idx, (i,j,k,l))
+                    push!(unique_idx, (i, j, k, l))
                 end
             end
         end
@@ -144,7 +151,7 @@ function ERI_2e4c!(out, BS::BasisSet)
 
     # Initialize array for results
     allocate(body) = body(zeros(Cdouble, Nmax^4))
-    workerpool(allocate, unique_idx; chunksize=10) do (i,j,k,l), buf
+    workerpool(allocate, unique_idx; chunksize = 10) do (i, j, k, l), buf
         # Shift indexes (C starts with 0, Julia 1)
         id, jd, kd, ld = i+1, j+1, k+1, l+1
         Ni, Nj, Nk, Nl = Nvals[id], Nvals[jd], Nvals[kd], Nvals[ld]
@@ -154,10 +161,10 @@ function ERI_2e4c!(out, BS::BasisSet)
 
         # Move results to output array
         ri, rj, rk, rl = ranges[id], ranges[jd], ranges[kd], ranges[ld]
-        out[ri, rj, rk, rl] .= reshape(@view(buf[1:Ni*Nj*Nk*Nl]), (Ni, Nj, Nk, Nl))
+        out[ri, rj, rk, rl] .= reshape(@view(buf[1:(Ni*Nj*Nk*Nl)]), (Ni, Nj, Nk, Nl))
 
-        if i != j && k != l && index2(i,j) != index2(k,l)
-            @inbounds for ni = ri, nj = rj, nk = rk, nl = rl
+        if i != j && k != l && index2(i, j) != index2(k, l)
+            @inbounds for ni in ri, nj in rj, nk in rk, nl in rl
                 out[nj, ni, nk, nl] = out[ni, nj, nk, nl]
                 out[ni, nj, nl, nk] = out[ni, nj, nk, nl]
                 out[nj, ni, nl, nk] = out[ni, nj, nk, nl]
@@ -166,26 +173,26 @@ function ERI_2e4c!(out, BS::BasisSet)
                 out[nk, nl, nj, ni] = out[ni, nj, nk, nl]
                 out[nl, nk, nj, ni] = out[ni, nj, nk, nl]
             end
-        elseif k != l && index2(i,j) != index2(k,l)
-            @inbounds for ni = ri, nj = rj, nk = rk, nl = rl
+        elseif k != l && index2(i, j) != index2(k, l)
+            @inbounds for ni in ri, nj in rj, nk in rk, nl in rl
                 out[ni, nj, nl, nk] = out[ni, nj, nk, nl]
                 out[nk, nl, ni, nj] = out[ni, nj, nk, nl]
                 out[nl, nk, ni, nj] = out[ni, nj, nk, nl]
             end
-        elseif i != j && index2(i,j) != index2(k,l)
-            @inbounds for ni = ri, nj = rj, nk = rk, nl = rl
+        elseif i != j && index2(i, j) != index2(k, l)
+            @inbounds for ni in ri, nj in rj, nk in rk, nl in rl
                 out[nj, ni, nk, nl] = out[ni, nj, nk, nl]
                 out[nk, nl, ni, nj] = out[ni, nj, nk, nl]
                 out[nk, nl, nj, ni] = out[ni, nj, nk, nl]
             end
         elseif i != j && k != l
-            @inbounds for ni = ri, nj = rj, nk = rk, nl = rl
+            @inbounds for ni in ri, nj in rj, nk in rk, nl in rl
                 out[nj, ni, nk, nl] = out[ni, nj, nk, nl]
                 out[ni, nj, nl, nk] = out[ni, nj, nk, nl]
                 out[nj, ni, nl, nk] = out[ni, nj, nk, nl]
             end
-        elseif index2(i,j) != index2(k,l)
-            @inbounds for ni = ri, nj = rj, nk = rk, nl = rl
+        elseif index2(i, j) != index2(k, l)
+            @inbounds for ni in ri, nj in rj, nk in rk, nl in rl
                 out[nk, nl, ni, nj] = out[ni, nj, nk, nl]
             end
         end

@@ -3,12 +3,11 @@ function string_repr(B::SphericalShell)
     l_sub = Char(0x2080 + B.l)
 
     # Unicode for superscript is a bit messier, so gotta use control flow
-    l_sup = B.l == 1 ? Char(0x00B9) :
-            B.l in [2,3] ? Char(0x00B1 + B.l) :
-            Char(0x2070 + B.l)
+    l_sup =
+        B.l == 1 ? Char(0x00B9) : B.l in [2, 3] ? Char(0x00B1 + B.l) : Char(0x2070 + B.l)
 
     nbas = 2*B.l + 1
-    mvals = collect(-B.l:B.l)
+    mvals = collect((-B.l):B.l)
     nprim = length(B.exp)
 
     # Reverse Dict(symbol=>num) to get Symbols from B.l
@@ -17,7 +16,7 @@ function string_repr(B::SphericalShell)
     for m in mvals
         # Add sub minus sign (0x208B) if necessary
         m_sub = m < 0 ? Char(0x208B)*Char(0x2080 - m) : Char(0x2080 + m)
-        out *= format("{:<4s} = ","χ$(l_sub)$m_sub")
+        out *= format("{:<4s} = ", "χ$(l_sub)$m_sub")
         for i in eachindex(B.coef)
 
             if i > 1
@@ -27,13 +26,13 @@ function string_repr(B::SphericalShell)
             #out *= "$(abs(B.coef[i]))⋅Y$(l_sub)$m_sub"
             out *= format("{:>15.10f}⋅Y$(l_sub)$m_sub", abs(B.coef[i]))
 
-            if B.l != 0 
+            if B.l != 0
                 out *= "⋅r$l_sup"
             end
 
             out *= "⋅exp(-$(B.exp[i])⋅r²)"
         end
-        out *="\n\n"
+        out *= "\n\n"
     end
     return strip(out)
 end
@@ -43,19 +42,17 @@ function string_repr(B::CartesianShell)
     l_sub = Char(0x2080 + B.l)
 
     # Unicode for superscript is a bit messier, so gotta use control flow
-    l_sup(l) = l < 2 ? "" :
-            l in [2,3] ? Char(0x00B0 + l) :
-            Char(0x2070 + l)
+    l_sup(l) = l < 2 ? "" : l in [2, 3] ? Char(0x00B0 + l) : Char(0x2070 + l)
 
     nbas = ((B.l + 1) * (B.l + 2)) ÷ 2
     mvals = String[]
     for a = B.l:-1:0
         for b = B.l:-1:0
             c = B.l - a - b
-            if c < 0 
+            if c < 0
                 continue
             end
-            r_str  = a > 0 ? "x"*l_sup(a) : ""
+            r_str = a > 0 ? "x"*l_sup(a) : ""
             r_str *= b > 0 ? "y"*l_sup(b) : ""
             r_str *= c > 0 ? "z"*l_sup(c) : ""
             if !isempty(r_str)
@@ -75,7 +72,7 @@ function string_repr(B::CartesianShell)
             _m = replace(m, "⋅"=>"")
             χ *= "($_m)"
         end
-        out *= format("{:<4s} = ",χ)
+        out *= format("{:<4s} = ", χ)
         for i in eachindex(B.coef)
 
             if i > 1
@@ -87,15 +84,15 @@ function string_repr(B::CartesianShell)
 
             out *= "exp(-$(B.exp[i])⋅r²)"
         end
-        out *="\n\n"
+        out *= "\n\n"
     end
     return strip(out)
 end
 
 function string_repr(B::BasisSet{T,Y,P}) where {T,Y,P}
-    out  =  "$(B.name) Basis Set\n"
+    out = "$(B.name) Basis Set\n"
     out *= "Type: "*replace("$(P)", "Shell"=>"")
-    out *= "   Backend: " 
+    out *= "   Backend: "
     if T === GaussianBasis.LCint
         out *= "Libcint\n\n"
     else
@@ -104,15 +101,7 @@ function string_repr(B::BasisSet{T,Y,P}) where {T,Y,P}
     out *= "Number of shells: $(B.nshells)\n"
     out *= "Number of basis:  $(B.nbas)\n\n"
 
-    l_to_symbol = Dict(
-        0 => "s",
-        1 => "p",
-        2 => "d",
-        3 => "f",
-        4 => "g",
-        5 => "h",
-        6 => "i",
-    )
+    l_to_symbol = Dict(0 => "s", 1 => "p", 2 => "d", 3 => "f", 4 => "g", 5 => "h", 6 => "i")
 
     for i in eachindex(B.atoms)
         A = B.atoms[i]
@@ -126,26 +115,26 @@ function string_repr(B::BasisSet{T,Y,P}) where {T,Y,P}
                 out *= "$(count[b.l+1])$(L) "
             end
         end
-        out *="\n"
+        out *= "\n"
     end
 
     return strip(out)
 end
 
 # Pretty printing
-function show(io::IO, ::MIME"text/plain", X::T) where T<:Union{BasisFunction, BasisSet}
+function show(io::IO, ::MIME"text/plain", X::T) where {T<:Union{BasisFunction,BasisSet}}
     print(io, string_repr(X))
 end
 
 # adapted from https://juliafolds.github.io/data-parallelism/tutorials/concurrency-patterns/
-function workerpool(work!, allocate, inputs; chunksize,ntasks = Threads.nthreads())
+function workerpool(work!, allocate, inputs; chunksize, ntasks = Threads.nthreads())
     requests = Channel{Vector{eltype(inputs)}}(Inf)
     for chunk in Iterators.partition(inputs, chunksize)
         put!(requests, chunk)
     end
     close(requests)
 
-    @sync for _ in 1:ntasks
+    @sync for _ = 1:ntasks
         Threads.@spawn allocate() do resource
             for chunk in requests
                 for input in chunk

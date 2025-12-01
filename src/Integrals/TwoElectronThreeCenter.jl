@@ -1,7 +1,7 @@
 const _ghostBF = CartesianShell(0, [1.0], [0.0], Atom(1, 1.0, [0.0, 0.0, 0.0]))
 
 function ERI_2e3c!(out, BS::BasisSet{LCint}, i, j, k)
-    cint3c2e_sph!(out, [i,j,k], BS.lib)
+    cint3c2e_sph!(out, [i, j, k], BS.lib)
 end
 
 function ERI_2e3c!(out, BS1::BasisSet, BS2::BasisSet, i, j, k)
@@ -26,14 +26,14 @@ function ERI_2e3c!(out, BS1::BasisSet, BS2::BasisSet)
     ao_offset2 = [sum(Nvals2[1:(i-1)]) for i = 1:BS2.nshells]
 
     allocate(body) = body(zeros(Cdouble, Nmax1^2*Nmax2))
-    workerpool(allocate, 1:BS2.nshells; chunksize=1) do k, buf
+    workerpool(allocate, 1:BS2.nshells; chunksize = 1) do k, buf
         @inbounds begin
             Nk = Nvals2[k]
             koff = ao_offset2[k]
-            for i in 1:BS1.nshells
+            for i = 1:BS1.nshells
                 Ni = Nvals1[i]
                 ioff = ao_offset1[i]
-                for j in i:BS1.nshells
+                for j = i:BS1.nshells
                     Nj = Nvals1[j]
                     joff = ao_offset1[j]
 
@@ -48,8 +48,8 @@ function ERI_2e3c!(out, BS1::BasisSet, BS2::BasisSet)
                             for is = 1:Ni
                                 I = ioff + is
                                 J < I ? break : nothing
-                                out[I,J,K] = buf[is + Ni*(js-1) + Ni*Nj*(ks-1)]
-                                out[J,I,K] = out[I,J,K]
+                                out[I, J, K] = buf[is+Ni*(js-1)+Ni*Nj*(ks-1)]
+                                out[J, I, K] = out[I, J, K]
                             end
                         end
                     end
@@ -83,10 +83,10 @@ function ERI_2e3c!(out, BS1::BasisSet{LCint}, BS2::BasisSet{LCint})
         @inbounds begin
             Nk = Nvals2[k]
             koff = ao_offset2[k]
-            for i in 1:BS1.nshells
+            for i = 1:BS1.nshells
                 Ni = Nvals1[i]
                 ioff = ao_offset1[i]
-                for j in i:BS1.nshells
+                for j = i:BS1.nshells
                     Nj = Nvals1[j]
                     joff = ao_offset1[j]
 
@@ -101,8 +101,8 @@ function ERI_2e3c!(out, BS1::BasisSet{LCint}, BS2::BasisSet{LCint})
                             for is = 1:Ni
                                 I = ioff + is
                                 J < I ? break : nothing
-                                out[I,J,K] = buf[is + Ni*(js-1) + Ni*Nj*(ks-1)]
-                                out[J,I,K] = out[I,J,K]
+                                out[I, J, K] = buf[is+Ni*(js-1)+Ni*Nj*(ks-1)]
+                                out[J, I, K] = out[I, J, K]
                             end
                         end
                     end

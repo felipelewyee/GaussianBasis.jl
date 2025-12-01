@@ -1,16 +1,9 @@
 const LIBPATH = joinpath(@__DIR__, "../lib")
 const AM_pat = r"([SPDFGHI]{1,2})\s+?(\d++)"
 const prim_pat = r"([+-]?\d*?\.\d*(?:D[+-]\d+)?)\s+?([+-]?\d*?\.\d*(?:D[+-]\d+)?)"
-const prim_pat3 = r"([+-]?\d*?\.\d*(?:D[+-]\d+)?)\s+?([+-]?\d*?\.\d*(?:D[+-]\d+)?)\s+?([+-]?\d*?\.\d*(?:D[+-]\d+)?)"
-const AMDict = Dict(
-        "S" => 0,
-        "P" => 1, 
-        "D" => 2, 
-        "F" => 3, 
-        "G" => 4, 
-        "H" => 5, 
-        "I" => 6, 
-    )
+const prim_pat3 =
+    r"([+-]?\d*?\.\d*(?:D[+-]\d+)?)\s+?([+-]?\d*?\.\d*(?:D[+-]\d+)?)\s+?([+-]?\d*?\.\d*(?:D[+-]\d+)?)"
+const AMDict = Dict("S" => 0, "P" => 1, "D" => 2, "F" => 3, "G" => 4, "H" => 5, "I" => 6)
 
 """
     GaussinBasis.read_basisset(bname::String, atom::atom; spherical=true)
@@ -19,9 +12,9 @@ Returns an array of BasisFunction objects for the given `Atom` and basis set nam
 By default, functions are normalized as Spherical functions (spherical=true). If spherical is set to false,
 Cartesian functions are returned instead. 
 """
-function read_basisset(bname::String, atom::A; spherical=true) where A <: Atom
+function read_basisset(bname::String, atom::A; spherical = true) where {A<:Atom}
 
-    AtomSymbol = Molecules.symbol(atom) 
+    AtomSymbol = Molecules.symbol(atom)
 
     # Transform basis name to file name e.g. 6-31g* => 6-31g_st_
     clean_bname = replace(lowercase(bname), "*"=>"_st_")
@@ -49,11 +42,11 @@ function read_basisset(bname::String, atom::A; spherical=true) where A <: Atom
     for b in BasisStrings
         r = r"[SPDFGHI]{2}"
         if occursin(r, b)
-            bf1, bf2 = two_basis_from_string(b, atom, spherical=spherical)
+            bf1, bf2 = two_basis_from_string(b, atom, spherical = spherical)
             push!(out, bf1)
             push!(out, bf2)
         else
-            bf = basis_from_string(b, atom, spherical=spherical)
+            bf = basis_from_string(b, atom, spherical = spherical)
             push!(out, bf)
         end
     end
@@ -103,7 +96,7 @@ From a String block representing two Basis Function (e.g. SP blocks) in gbs form
 `BasisFunction` object. For the special case of two basis being described within the 
 same block (e.g. SP blocks) see `two_basis_from_string`
 """
-function basis_from_string(bstring::String, atom::A; spherical=true) where A <: Atom
+function basis_from_string(bstring::String, atom::A; spherical = true) where {A<:Atom}
     lines = split(strip(bstring), "\n")
     head = lines[1]
     m = match(AM_pat, head)
@@ -146,7 +139,7 @@ end
 From a String block representing two Basis Function (e.g. SP blocks) in gbs format, returns a
 `BasisFunction` object. For the case of a single basis being described within the block see `basis_from_string`
 """
-function two_basis_from_string(bstring::String, atom::A; spherical=true) where A <: Atom
+function two_basis_from_string(bstring::String, atom::A; spherical = true) where {A<:Atom}
     lines = split(strip(bstring), "\n")
     head = lines[1]
     m = match(AM_pat, head)
@@ -155,7 +148,8 @@ function two_basis_from_string(bstring::String, atom::A; spherical=true) where A
     end
     AMsymbol = String(m.captures[1])
 
-    length(AMsymbol) == 2 || throw(ArgumentError("cannot extract two basis from $AMsymbol function"))
+    length(AMsymbol) == 2 ||
+        throw(ArgumentError("cannot extract two basis from $AMsymbol function"))
 
     l1 = AMDict[AMsymbol[1]*""]
     l2 = AMDict[AMsymbol[2]*""]

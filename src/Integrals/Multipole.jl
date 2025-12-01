@@ -1,8 +1,8 @@
 
-dipole!(out, BS::BasisSet{LCint}, i, j) = cint1e_r_sph!(out, [i,j], BS.lib)
-quadrupole!(out, BS::BasisSet{LCint}, i, j) = cint1e_rr_sph!(out, [i,j], BS.lib)
-octupole!(out, BS::BasisSet{LCint}, i, j) = cint1e_rrr_sph!(out, [i,j], BS.lib)
-hexadecapole!(out, BS::BasisSet{LCint}, i, j) = cint1e_rrrr_sph!(out, [i,j], BS.lib)
+dipole!(out, BS::BasisSet{LCint}, i, j) = cint1e_r_sph!(out, [i, j], BS.lib)
+quadrupole!(out, BS::BasisSet{LCint}, i, j) = cint1e_rr_sph!(out, [i, j], BS.lib)
+octupole!(out, BS::BasisSet{LCint}, i, j) = cint1e_rrr_sph!(out, [i, j], BS.lib)
+hexadecapole!(out, BS::BasisSet{LCint}, i, j) = cint1e_rrrr_sph!(out, [i, j], BS.lib)
 
 function dipole(BS::BasisSet, i, j)
     out = zeros(num_basis(BS.basis[i]), num_basis(BS.basis[j]), 3)

@@ -38,7 +38,7 @@ P shell with 3 basis built from 2 primitive gaussians
      +    0.7071067812⋅Y₁₁⋅r¹⋅exp(-1.2⋅r²)
 ```
 """
-struct SphericalShell{A<:Atom, R} <: BasisFunction
+struct SphericalShell{A<:Atom,R} <: BasisFunction
     l::Int
     coef::Vector{R}
     exp::Vector{R}
@@ -77,7 +77,7 @@ D shell with 6 basis built from 1 primitive gaussians
 χ(z²) =    0.7071067812⋅z²⋅exp(-5.0⋅r²)
 ```
 """
-struct CartesianShell{A<:Atom, R} <: BasisFunction
+struct CartesianShell{A<:Atom,R} <: BasisFunction
     l::Int
     coef::Vector{R}
     exp::Vector{R}
@@ -85,7 +85,7 @@ struct CartesianShell{A<:Atom, R} <: BasisFunction
 end
 
 # Basis functions are created Spherical by default
-BasisFunction(l, coef, exp, atom) = SphericalShell(l,coef,exp, atom)
+BasisFunction(l, coef, exp, atom) = SphericalShell(l, coef, exp, atom)
 # Number of basis in a shell
 num_basis(B::CartesianShell) = ((B.l + 1) * (B.l + 2)) ÷ 2
 num_basis(B::SphericalShell) = 2*B.l + 1
@@ -98,8 +98,8 @@ function index2(i, j)
     end
 end
 
-function index4(i,j,k,l)
-    return index2(index2(i,j), index2(k,l))
+function index4(i, j, k, l)
+    return index2(index2(i, j), index2(k, l))
 end
 
 include("BasisParser.jl")

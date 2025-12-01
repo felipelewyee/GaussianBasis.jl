@@ -6,9 +6,9 @@ function SinD(S, D, verbose = false)
     Sy = S[3]
     Sz = S[4]
 
-    Dxs = D[:,:,:,:,1]
-    Dys = D[:,:,:,:,2]
-    Dzs = D[:,:,:,:,3]
+    Dxs = D[:, :, :, :, 1]
+    Dys = D[:, :, :, :, 2]
+    Dzs = D[:, :, :, :, 3]
     for i in eachindex(Si)
         idx = Si[i]
         x = Sx[i]
@@ -18,7 +18,7 @@ function SinD(S, D, verbose = false)
         Dy = Dys[idx...]
         Dz = Dzs[idx...]
 
-        for (k,Dk) in [(x,Dx), (y,Dy), (z,Dz)]
+        for (k, Dk) in [(x, Dx), (y, Dy), (z, Dz)]
             if abs(k - Dk) > 1e-10
                 println("$idx diff found: $k against $Dk")
                 return false
@@ -42,7 +42,7 @@ bs = BasisSet("cc-pvdz", atoms)
     for iA = 1:5
         dS = ∇overlap(bs, iA)
         for k = 1:3
-            @test dS[:,:,k] ≈ ∇FD_overlap(bs, iA, k)
+            @test dS[:, :, k] ≈ ∇FD_overlap(bs, iA, k)
         end
     end
 end
@@ -51,7 +51,7 @@ end
     for iA = 1:5
         dT = ∇kinetic(bs, iA)
         for k = 1:3
-            @test dT[:,:,k] ≈ ∇FD_kinetic(bs, iA, k)
+            @test dT[:, :, k] ≈ ∇FD_kinetic(bs, iA, k)
         end
     end
 end
@@ -60,7 +60,7 @@ end
     for iA = 1:5
         dV = ∇nuclear(bs, iA)
         for k = 1:3
-            @test dV[:,:,k] ≈ ∇FD_nuclear(bs, iA, k)
+            @test dV[:, :, k] ≈ ∇FD_nuclear(bs, iA, k)
         end
     end
 end
@@ -70,7 +70,7 @@ end
         for iA = 1:5
             dERI = ∇ERI_2e4c(bs, iA)
             for k = 1:3
-                @test dERI[:,:,:,:,k] ≈ ∇FD_ERI_2e4c(bs, iA, k)
+                @test dERI[:, :, :, :, k] ≈ ∇FD_ERI_2e4c(bs, iA, k)
             end
         end
     end
@@ -79,7 +79,7 @@ end
         for iA = 1:5
             sparse = ∇sparseERI_2e4c(bs, iA)
             dense = ∇ERI_2e4c(bs, iA)
-            @test SinD(sparse, dense) 
+            @test SinD(sparse, dense)
         end
     end
 end
@@ -90,7 +90,7 @@ aux = BasisSet("def2-universal-jkfit", atoms)
     for iA = 1:5
         dERI = ∇ERI_2e3c(bs, aux, iA)
         for k = 1:3
-            @test dERI[:,:,:,k] ≈ ∇FD_ERI_2e3c(bs, aux, iA, k)
+            @test dERI[:, :, :, k] ≈ ∇FD_ERI_2e3c(bs, aux, iA, k)
         end
     end
 end
@@ -99,7 +99,7 @@ end
     for iA = 1:5
         dERI = ∇ERI_2e2c(aux, iA)
         for k = 1:3
-            @test dERI[:,:,k] ≈ ∇FD_ERI_2e2c(aux, iA, k)
+            @test dERI[:, :, k] ≈ ∇FD_ERI_2e2c(aux, iA, k)
         end
     end
 end

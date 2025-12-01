@@ -8,9 +8,9 @@ H   -2.488218762100    2.295059432700   -1.008766153900
 H   -2.488220057000    3.155340844300    0.512081313000""")
 
 bs = BasisSet("6-31g", atoms)
-bs_acsint = BasisSet("6-31g", atoms, spherical=false, lib=:acsint)
+bs_acsint = BasisSet("6-31g", atoms, spherical = false, lib = :acsint)
 bs2 = BasisSet("sto-3g", atoms)
-bs2_acsint = BasisSet("sto-3g", atoms, spherical=false, lib=:acsint)
+bs2_acsint = BasisSet("sto-3g", atoms, spherical = false, lib = :acsint)
 
 @testset "One-Electron Integrals" begin
 
@@ -25,7 +25,7 @@ bs2_acsint = BasisSet("sto-3g", atoms, spherical=false, lib=:acsint)
     @test kinetic(bs, bs2) ≈ h5read(test_file, "kinetic_sto3g")
     @test nuclear(bs, bs2) ≈ h5read(test_file, "nuclear_sto3g")
 
-    @test overlap(bs_acsint, bs_acsint) ≈ h5read(test_file, "overlap") 
+    @test overlap(bs_acsint, bs_acsint) ≈ h5read(test_file, "overlap")
 end
 
 @testset "Two-Electron Four-Center" begin
@@ -58,12 +58,12 @@ end
     Co = h5read(test_file, "CH4_Orbitals")
     bs3 = BasisSet("cc-pvdz", atoms)
     d = GaussianBasis.dipole(bs3) # (34, 34, 3) array
-    d2 = Co' * reshape(d, (34,102)) # (5, 102) Array
-    d2 = permutedims(reshape(d2, (5,34,3)), (1,3,2)) # (5,3,34) array
-    d3 = reshape(d2, (15,34)) * Co #(15,5) array
-    d3 = reshape(d3, 5,3,5) 
-    μ = 2 .* sum(d3[i,:,i] for i=1:5)
-    @test isapprox(μ, [-40.280477, 43.202326, 0.0000], atol=1e-5)
+    d2 = Co' * reshape(d, (34, 102)) # (5, 102) Array
+    d2 = permutedims(reshape(d2, (5, 34, 3)), (1, 3, 2)) # (5,3,34) array
+    d3 = reshape(d2, (15, 34)) * Co #(15,5) array
+    d3 = reshape(d3, 5, 3, 5)
+    μ = 2 .* sum(d3[i, :, i] for i = 1:5)
+    @test isapprox(μ, [-40.280477, 43.202326, 0.0000], atol = 1e-5)
 end
 
 @testset "Multipole" begin

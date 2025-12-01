@@ -1,27 +1,27 @@
 # Backend: Libcint
 function overlap!(out, BS::BasisSet{LCint}, i, j)
-    cint1e_ovlp_sph!(out, @SVector([i,j]), BS.lib)
+    cint1e_ovlp_sph!(out, @SVector([i, j]), BS.lib)
 end
 
 function kinetic!(out, BS::BasisSet{LCint}, i, j)
-    cint1e_kin_sph!(out, @SVector([i,j]), BS.lib)
+    cint1e_kin_sph!(out, @SVector([i, j]), BS.lib)
 end
 
 function nuclear!(out, BS::BasisSet{LCint}, i, j)
-    cint1e_nuc_sph!(out, @SVector([i,j]), BS.lib)
+    cint1e_nuc_sph!(out, @SVector([i, j]), BS.lib)
 end
 
 # Backend: ACSint -- fall back 
 function overlap!(out, BS::BasisSet, i, j)
-    generate_S_pair!(out, BS, i ,j)
+    generate_S_pair!(out, BS, i, j)
 end
 
 function kinetic!(out, BS::BasisSet, i, j)
-    generate_T_pair!(out, BS, i ,j)
+    generate_T_pair!(out, BS, i, j)
 end
 
 function nuclear!(out, BS::BasisSet, i, j)
-    generate_V_pair!(out, BS, i ,j)
+    generate_V_pair!(out, BS, i, j)
 end
 
 # General
@@ -62,29 +62,29 @@ function get_1e_matrix!(callback, out, BS::BasisSet, rank::Integer = 0)
     # Offset list for each shell, used to map shell index to AO index
     ao_offset = [sum(Nvals[1:(i-1)]) for i = 1:BS.nshells]
 
-    ijs = Iterators.flatten((((i,j) for i = 1:j) for j = 1:BS.nshells))
+    ijs = Iterators.flatten((((i, j) for i = 1:j) for j = 1:BS.nshells))
 
     allocate(body) = body(zeros(Cdouble, 3^rank * Nmax^2))
-    workerpool(allocate, ijs; chunksize=10) do (i,j), buf
-            Ni = Nvals[i]
-            Nj = Nvals[j]
-            Nij = Ni*Nj
-            ioff = ao_offset[i]
-            joff = ao_offset[j]
+    workerpool(allocate, ijs; chunksize = 10) do (i, j), buf
+        Ni = Nvals[i]
+        Nj = Nvals[j]
+        Nij = Ni*Nj
+        ioff = ao_offset[i]
+        joff = ao_offset[j]
 
-            callback(buf, BS, i, j)
-            I = (ioff+1):(ioff+Ni)
-            J = (joff+1):(joff+Nj)
+        callback(buf, BS, i, j)
+        I = (ioff+1):(ioff+Ni)
+        J = (joff+1):(joff+Nj)
 
-            # Get strides for each cartesian product
-            for (n, ks) in enumerate(Iterators.product(Iterators.repeated(1:3, rank)...))
-                r = Nij*(n-1)+1:n*Nij
-                kvals = reshape(view(buf, r), Ni, Nj)
-                out[I,J,ks...] .+= kvals
-                if i != j
-                    out[J,I,ks...] .+= kvals'
-                end
+        # Get strides for each cartesian product
+        for (n, ks) in enumerate(Iterators.product(Iterators.repeated(1:3, rank)...))
+            r = (Nij*(n-1)+1):(n*Nij)
+            kvals = reshape(view(buf, r), Ni, Nj)
+            out[I, J, ks...] .+= kvals
+            if i != j
+                out[J, I, ks...] .+= kvals'
             end
+        end
     end
     return out
 end
@@ -157,7 +157,7 @@ function get_1e_matrix!(callback, out, BS1::BasisSet, BS2::BasisSet)
             Li = Nvals1[i]
             buf = zeros(Cdouble, Nmax1*Nmax2)
             ioff = ao_offset1[i]
-            for j in 1:BS2.nshells
+            for j = 1:BS2.nshells
                 Lj = Nvals2[j]
                 joff = ao_offset2[j]
 
@@ -169,7 +169,7 @@ function get_1e_matrix!(callback, out, BS1::BasisSet, BS2::BasisSet)
                     J = joff + js
                     for is = 1:Li
                         I = ioff + is
-                        out[I,J] = buf[is + Li*(js-1)]
+                        out[I, J] = buf[is+Li*(js-1)]
                     end
                 end
             end
@@ -200,7 +200,7 @@ function get_1e_matrix!(callback, out, BS1::BasisSet{LCint}, BS2::BasisSet{LCint
         @inbounds begin
             Li = Nvals1[i]
             ioff = ao_offset1[i]
-            for j in 1:BS2.nshells
+            for j = 1:BS2.nshells
                 Lj = Nvals2[j]
                 joff = ao_offset2[j]
 
@@ -212,7 +212,7 @@ function get_1e_matrix!(callback, out, BS1::BasisSet{LCint}, BS2::BasisSet{LCint
                     J = joff + js
                     for is = 1:Li
                         I = ioff + is
-                        out[I,J] = buf[is + Li*(js-1)]
+                        out[I, J] = buf[is+Li*(js-1)]
                     end
                 end
             end

@@ -19,9 +19,19 @@ shells = [
 bset = BasisSet("Test", atoms, shells)
 
 @testset "Misc" begin
-    @test GaussianBasis.string_repr(shells[1]) == "S shell with 1 basis built from 2 primitive gaussians\n\nχ₀₀  =    0.7071067812⋅Y₀₀⋅exp(-5.0⋅r²)\n     +    0.7071067812⋅Y₀₀⋅exp(-1.2⋅r²)" 
-    @test occursin(r"Test Basis\s+?Set\nType:\s+?Spherical", GaussianBasis.string_repr(bset))
-    @test occursin(r"Number of shells:\s?+6\nNumber of basis:\s+?8", GaussianBasis.string_repr(bset))
-    @test occursin(r"C: 1s 1p\s+?\nH: 1s\s+?\nH: 1s\s+?\nH: 1s\s+?\nH: 1s\s*", GaussianBasis.string_repr(bset))
+    @test GaussianBasis.string_repr(shells[1]) ==
+          "S shell with 1 basis built from 2 primitive gaussians\n\nχ₀₀  =    0.7071067812⋅Y₀₀⋅exp(-5.0⋅r²)\n     +    0.7071067812⋅Y₀₀⋅exp(-1.2⋅r²)"
+    @test occursin(
+        r"Test Basis\s+?Set\nType:\s+?Spherical",
+        GaussianBasis.string_repr(bset),
+    )
+    @test occursin(
+        r"Number of shells:\s?+6\nNumber of basis:\s+?8",
+        GaussianBasis.string_repr(bset),
+    )
+    @test occursin(
+        r"C: 1s 1p\s+?\nH: 1s\s+?\nH: 1s\s+?\nH: 1s\s+?\nH: 1s\s*",
+        GaussianBasis.string_repr(bset),
+    )
     @test bset[1] == bset.basis[1]
 end

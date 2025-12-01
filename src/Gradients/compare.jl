@@ -6,7 +6,7 @@ function compare(E, idx, ∇x, ∇y, ∇z)
         for j = i:N
             for k = 1:N
                 for l = k:N
-                    if GaussianBasis.index2(i-1,j-1) > GaussianBasis.index2(k-1,l-1)
+                    if GaussianBasis.index2(i-1, j-1) > GaussianBasis.index2(k-1, l-1)
                         continue
                     end
                     A = 0.0
@@ -16,7 +16,7 @@ function compare(E, idx, ∇x, ∇y, ∇z)
                     catch ArgumentError
                         A = 0.0
                     end
-                    B = E[1,i,j,k,l]
+                    B = E[1, i, j, k, l]
                     test = A ≈ B
                     if !test
                         println("$i $j $k $l")
@@ -37,7 +37,7 @@ function compare(E, idx, ∇x, ∇y, ∇z)
         for j = i:N
             for k = 1:N
                 for l = k:N
-                    if GaussianBasis.index2(i-1,j-1) > GaussianBasis.index2(k-1,l-1)
+                    if GaussianBasis.index2(i-1, j-1) > GaussianBasis.index2(k-1, l-1)
                         continue
                     end
                     A = 0.0
@@ -47,7 +47,7 @@ function compare(E, idx, ∇x, ∇y, ∇z)
                     catch ArgumentError
                         A = 0.0
                     end
-                    B = E[2,i,j,k,l]
+                    B = E[2, i, j, k, l]
                     test = A ≈ B
                     if !test
                         println("$i $j $k $l")
@@ -68,7 +68,7 @@ function compare(E, idx, ∇x, ∇y, ∇z)
         for j = i:N
             for k = 1:N
                 for l = k:N
-                    if GaussianBasis.index2(i-1,j-1) > GaussianBasis.index2(k-1,l-1)
+                    if GaussianBasis.index2(i-1, j-1) > GaussianBasis.index2(k-1, l-1)
                         continue
                     end
                     A = 0.0
@@ -78,7 +78,7 @@ function compare(E, idx, ∇x, ∇y, ∇z)
                     catch ArgumentError
                         A = 0.0
                     end
-                    B = E[3,i,j,k,l]
+                    B = E[3, i, j, k, l]
                     test = A ≈ B
                     if !test
                         println("$i $j $k $l")
